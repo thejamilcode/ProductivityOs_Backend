@@ -4,14 +4,15 @@ const analyticsCtrl = require('./analyticsController');
 
 exports.getHabits = async (req, res, next) => {
   try {
-    const habits = await Habit.find({ user: req.user.id }).sort({ createdAt: -1 });
+    const habits = await Habit.find({ user: req.user.id }).sort({ order: 1, createdAt: -1 });
     res.json({ habits });
   } catch (err) { next(err); }
 };
 
 exports.createHabit = async (req, res, next) => {
   try {
-    const habit = await Habit.create({ ...req.body, user: req.user.id });
+    const count = await Habit.countDocuments({ user: req.user.id });
+    const habit = await Habit.create({ ...req.body, user: req.user.id, order: count });
     res.status(201).json({ habit });
   } catch (err) { next(err); }
 };
@@ -60,5 +61,24 @@ exports.deleteHabit = async (req, res, next) => {
     const habit = await Habit.findOneAndDelete({ _id: req.params.id, user: req.user.id });
     if (!habit) return res.status(404).json({ message: 'Habit not found' });
     res.json({ message: 'Deleted' });
+  } catch (err) { next(err); }
+};
+
+exports.reorderHabits = async (req, res, next) => {
+  try {
+    const { habits } = req.body;
+    if (!Array.isArray(habits)) {
+      return res.status(400).json({ message: 'Invalid payload' });
+    }
+
+    const bulkOps = habits.map((h) => ({
+      updateOne: {
+        filter: { _id: h.id, user: req.user.id },
+        update: { $set: { order: h.order } }
+      }
+    }));
+
+    await Habit.bulkWrite(bulkOps);
+    res.json({ message: 'Reordered' });
   } catch (err) { next(err); }
 };

@@ -10,6 +10,8 @@ const habitSchema = new mongoose.Schema({
   longestStreak:    { type: Number, default: 0 },
   completedDates:   [{ type: Date }],
   targetDaysPerWeek:{ type: Number, default: 7 },
+  category:         { type: String, enum: ['tech', 'personal'], default: 'personal' },
+  order:            { type: Number, default: 0 },
 }, { timestamps: true });
 
 habitSchema.index({ user: 1 });
